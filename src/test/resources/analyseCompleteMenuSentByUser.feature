@@ -17,3 +17,18 @@ Feature: Analyse d’un menu complet envoyé par l'utilisateur
     And je demande à OpenAI les infos pour "Poulet au curry"
     And j’enregistre "Poulet au curry" et ses données dans la base
     And je retourne toutes les infos des trois plats au client
+
+  Scenario: Je reçois un menu et la position du client
+  Given les plats suivants existent:
+  | nom             | calories | impact   | rentabilite |
+  | Gratin dauphinois | 500    | fort     | moyenne     |
+  | Salade verte      | 80     | faible   | élevée      |
+
+  And le plat "Poulet au curry" n'existe pas encore
+  When je reçois un menu contenant "Poulet au curry", "Gratin dauphinois", et "Salade verte"
+  And la position du client est 48.1147 latitude et -1.6794 longitude
+  Then je recherche le restaurant le plus proche de cette position
+  And je retourne les infos pour "Gratin dauphinois" et "Salade verte" depuis la base
+  And je demande à OpenAI les infos pour "Poulet au curry"
+  And j’enregistre "Poulet au curry" et ses données dans la base
+  And je retourne toutes les infos des trois plats au client

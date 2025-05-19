@@ -1,10 +1,14 @@
 package com.nm.menureader.acceptance;
 
 import com.nm.menureader.domain.Plat;
+import com.nm.menureader.domain.Position;
+import com.nm.menureader.domain.Restaurant;
 import com.nm.menureader.domain.repositories.PlatRepository;
 import com.nm.menureader.domain.services.AnalyseMenuService;
 import com.nm.menureader.domain.services.OpenAiService;
+import com.nm.menureader.domain.services.RechercheUnRestaurantService;
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -18,10 +22,13 @@ public class MenuSteps {
     private final PlatRepository platRepository;
     private AnalyseMenuService analyseMenuService;
     private List<Plat> resultats;
+    private Position positionDuUSer;
+    private RechercheUnRestaurantService rechercheUnRestaurantService;
 
-    public MenuSteps(PlatRepository platRepository, OpenAiService openAiService, PlatRepository platRepository1, OpenAiService openAiService1) {
+    public MenuSteps(PlatRepository platRepository, OpenAiService openAiService, PlatRepository platRepository1, OpenAiService openAiService1, RechercheUnRestaurantService rechercheUnRestaurantService) {
 
         this.platRepository = platRepository1;
+        this.rechercheUnRestaurantService = rechercheUnRestaurantService;
         this.analyseMenuService = new AnalyseMenuService(platRepository, openAiService);
     }
     @Given("les plats existent:")
@@ -83,5 +90,26 @@ public class MenuSteps {
         List<String> nomsAttendus = List.of("Bolognese", "Tartare de saumon", "Poulet au curry");
         List<String> nomsResultats = resultats.stream().map(Plat::getNom).toList();
         assertTrue(nomsResultats.containsAll(nomsAttendus));
+    }
+    @Given("les plats suivants existent:")
+    public void lesPlatsSuivantsExistent(DataTable dataTable) {
+        List<Map<String, String>> list = dataTable.asMaps(String.class, String.class);
+        list.forEach(map -> {
+            Plat plat = new Plat(map.get("nom"), Integer.parseInt(map.get("calories")), map.get("impact"), map.get("rentabilite"));
+            platRepository.add(plat);
+            assertTrue(platRepository.all().contains(plat));
+        });
+    }
+
+    @And("la position du client est {double} latitude et {double} longitude")
+    public void laPositionDuClientEstLatitudeEtLongitude(double latitude, double longitude) {
+        positionDuUSer = new Position(latitude, longitude);
+        assertNotNull(positionDuUSer);
+    }
+
+    @Then("je recherche le restaurant le plus proche de cette position")
+    public void jeRechercheLeRestaurantLePlusProcheDeCettePosition() {
+
+        Restaurant restaurantLePlusProbable = rechercheUnRestaurantService.rechercheDepuisGoogle(positionDuUSer);
     }
 }
